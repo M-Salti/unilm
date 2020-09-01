@@ -111,6 +111,9 @@ def train(args, training_features, model, tokenizer):
     if args.num_training_steps == -1:
         args.num_training_steps = int(args.num_training_epochs * len(training_features) / train_batch_size)
 
+    if args.warmup_portion:
+        args.num_warmup_steps = args.warmup_portion * args.num_training_steps
+
     scheduler = get_linear_schedule_with_warmup(
         optimizer, num_warmup_steps=args.num_warmup_steps,
         num_training_steps=args.num_training_steps, last_epoch=-1)
@@ -291,6 +294,8 @@ def get_args():
                         help="set total number of training epochs to perform (--num_training_steps has higher priority)")
     parser.add_argument("--num_warmup_steps", default=0, type=int,
                         help="Linear warmup over warmup_steps.")
+    parser.add_argument("--warmup_portion", defualt=0, type=float, 
+                        help="Linear warmup over warmup_portion of the total steps (overrides num_warmup_steps).")
 
     parser.add_argument("--random_prob", default=0.1, type=float,
                         help="prob to random replace a masked token")
