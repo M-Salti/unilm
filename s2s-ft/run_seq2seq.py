@@ -11,10 +11,7 @@ import torch
 from torch.utils.data import (DataLoader, SequentialSampler)
 from torch.utils.data.distributed import DistributedSampler
 
-try:
-    from torch.utils.tensorboard import SummaryWriter
-except:
-    from tensorboardX import SummaryWriter
+import wandb
 
 import tqdm
 
@@ -37,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 MODEL_CLASSES = {
     'bert': (BertConfig, BertTokenizer),
-    'minilm': (MinilmConfig, MinilmTokenizer),
+    'minilm': (MinilmConfig, XLMRobertaTokenizer),
     'roberta': (RobertaConfig, RobertaTokenizer),
     'xlm-roberta': (XLMRobertaConfig, XLMRobertaTokenizer),
     'unilm': (UnilmConfig, UnilmTokenizer),
@@ -76,10 +73,8 @@ def prepare_for_training(args, model, checkpoint_state_dict, amp):
 
 def train(args, training_features, model, tokenizer):
     """ Train the model """
-    if args.local_rank in [-1, 0] and args.log_dir:
-        tb_writer = SummaryWriter(log_dir=args.log_dir)
-    else:
-        tb_writer = None
+    wandb.init(project=os.getenv("WANDB_PROJECT", "huggingface"), config=args, name=args.run_name)
+    wandb.watch(model)
 
     if args.fp16:
         try:
@@ -205,6 +200,14 @@ def train(args, training_features, model, tokenizer):
                 global_step += 1
 
                 if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
+                    wandb.log(
+                        {
+                            'lr': scheduler.get_lr()[0],
+                            'loss': logging_loss / args.logging_steps
+                        },
+                        step=global_step
+                    )
+
                     logger.info("")
                     logger.info(" Step [%d ~ %d]: %.2f", global_step - args.logging_steps, global_step, logging_loss)
                     logging_loss = 0.0
@@ -228,8 +231,7 @@ def train(args, training_features, model, tokenizer):
 
                     logger.info("Saving model checkpoint %d into %s", global_step, save_path)
 
-    if args.local_rank in [-1, 0] and tb_writer:
-        tb_writer.close()
+    wandb.save(f'{save_path}/*')
 
 
 def get_args():
@@ -296,6 +298,7 @@ def get_args():
     parser.add_argument("--keep_prob", default=0.1, type=float,
                         help="prob to keep no change for a masked token")
 
+    parser.add_argument('--run_name', type=str, help="WandB run name.")
     parser.add_argument('--logging_steps', type=int, default=500,
                         help="Log every X updates steps.")
     parser.add_argument('--save_steps', type=int, default=1500,
