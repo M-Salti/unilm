@@ -294,7 +294,7 @@ def get_args():
                         help="set total number of training epochs to perform (--num_training_steps has higher priority)")
     parser.add_argument("--num_warmup_steps", default=0, type=int,
                         help="Linear warmup over warmup_steps.")
-    parser.add_argument("--warmup_portion", defualt=0, type=float, 
+    parser.add_argument("--warmup_portion", default=0, type=float, 
                         help="Linear warmup over warmup_portion of the total steps (overrides num_warmup_steps).")
 
     parser.add_argument("--random_prob", default=0.1, type=float,
