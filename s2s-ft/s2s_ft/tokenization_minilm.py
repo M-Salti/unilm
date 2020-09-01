@@ -30,16 +30,17 @@ import os
 import unicodedata
 from io import open
 
-from transformers.tokenization_bert import BertTokenizer, whitespace_tokenize
+from transformers import XLMRobertaTokenizer
+from transformers.tokenization_bert import whitespace_tokenize
 
 logger = logging.getLogger(__name__)
 
-VOCAB_FILES_NAMES = {'vocab_file': 'vocab.txt'}
+VOCAB_FILES_NAMES = {'vocab_file': 'sentencepiece.bpe.model'}
 
 PRETRAINED_VOCAB_FILES_MAP = {
     'vocab_file':
     {
-        'minilm-l12-h384-uncased': "https://unilm.blob.core.windows.net/ckpt/minilm-l12-h384-uncased-vocab.txt",
+        'minilm-l12-h384-uncased': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-roberta-base-sentencepiece.bpe.model',
     }
 }
 
@@ -48,7 +49,7 @@ PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES = {
 }
 
 
-class MinilmTokenizer(BertTokenizer):
+class MinilmTokenizer(XLMRobertaTokenizer):
     r"""
     Constructs a MinilmTokenizer.
     :class:`~transformers.MinilmTokenizer` is identical to BertTokenizer and runs end-to-end tokenization: punctuation splitting + wordpiece
