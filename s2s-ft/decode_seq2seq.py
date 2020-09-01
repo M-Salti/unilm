@@ -21,13 +21,13 @@ from transformers.tokenization_bert import whitespace_tokenize
 import s2s_ft.s2s_loader as seq2seq_loader
 from s2s_ft.utils import load_and_cache_examples
 from transformers import \
-    BertTokenizer, RobertaTokenizer
+    BertTokenizer, RobertaTokenizer, XLMRobertaTokenizer
 from s2s_ft.tokenization_unilm import UnilmTokenizer
 from s2s_ft.tokenization_minilm import MinilmTokenizer
 
 TOKENIZER_CLASSES = {
     'bert': BertTokenizer,
-    'minilm': MinilmTokenizer,
+    'minilm': XLMRobertaTokenizer,
     'roberta': RobertaTokenizer,
     'unilm': UnilmTokenizer,
 }
@@ -153,7 +153,9 @@ def main():
         args.tokenizer_name, do_lower_case=args.do_lower_case, 
         cache_dir=args.cache_dir if args.cache_dir else None)
 
-    if args.model_type == "roberta":
+    if args.model_type == "minilm":
+        vocab = tokenizer.get_vocab()
+    elif args.model_type == "roberta":
         vocab = tokenizer.encoder
     else:
         vocab = tokenizer.vocab
@@ -258,7 +260,7 @@ def main():
                             if t in (tokenizer.sep_token, tokenizer.pad_token):
                                 break
                             output_tokens.append(t)
-                        if args.model_type == "roberta":
+                        if args.model_type == "roberta" or args.model_type == "minilm":
                             output_sequence = tokenizer.convert_tokens_to_string(output_tokens)
                         else:
                             output_sequence = ' '.join(detokenize(output_tokens))
