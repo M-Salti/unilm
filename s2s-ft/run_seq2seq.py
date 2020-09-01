@@ -208,7 +208,6 @@ def train(args, training_features, model, tokenizer):
                         step=global_step
                     )
 
-                    logger.info("")
                     logger.info(" Step [%d ~ %d]: %.2f", global_step - args.logging_steps, global_step, logging_loss)
                     logging_loss = 0.0
 
