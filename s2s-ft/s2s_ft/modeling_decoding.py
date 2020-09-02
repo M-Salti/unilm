@@ -784,7 +784,8 @@ class PreTrainedBertModel(nn.Module):
         model = cls(config, *inputs, **kwargs)
         if state_dict is None:
             weights_path = os.path.join(pretrained_model_name, WEIGHTS_NAME)
-            state_dict = torch.load(weights_path)
+            map_location = torch.device('cpu') if torch.cuda.is_available() else None
+            state_dict = torch.load(weights_path, map_location)
 
         old_keys = []
         new_keys = []
