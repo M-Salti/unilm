@@ -16,7 +16,8 @@ import wandb
 import tqdm
 
 from s2s_ft.modeling import BertForSequenceToSequence
-from transformers import AdamW, get_linear_schedule_with_warmup
+from transformers import AdamW, get_constant_schedule, get_linear_schedule_with_warmup
+from torch.optim.lr_scheduler import OneCycleLR
 from transformers import \
     RobertaConfig, BertConfig, \
     BertTokenizer, RobertaTokenizer, \
@@ -114,9 +115,22 @@ def train(args, training_features, model, tokenizer):
     if args.warmup_portion:
         args.num_warmup_steps = args.warmup_portion * args.num_training_steps
 
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer, num_warmup_steps=args.num_warmup_steps,
-        num_training_steps=args.num_training_steps, last_epoch=-1)
+    if args.scheduler == "linear":
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer, num_warmup_steps=args.num_warmup_steps,
+            num_training_steps=args.num_training_steps, last_epoch=-1)
+
+    elif args.scheduler == "constant":
+        scheduler = get_constant_schedule(optimizer, last_epoch=-1)
+
+    elif args.scheduler == "1cycle":
+        scheduler = OneCycleLR(
+            optimizer, max_lr=args.learning_rate, total_steps=args.num_training_steps, pct_start=args.warmup_portion, 
+            anneal_strategy="cos", final_div_factor=1e-4, last_epoch=-1
+        )
+    
+    else:
+        assert False
 
     if checkpoint_state_dict:
         scheduler.load_state_dict(checkpoint_state_dict["lr_scheduler"])
@@ -179,7 +193,7 @@ def train(args, training_features, model, tokenizer):
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
 
-            train_iterator.set_description('Iter (loss=%5.3f) lr=%9.7f' % (loss.item(), scheduler.get_lr()[0]))
+            train_iterator.set_description('Iter (loss=%5.3f) lr=%9.7f' % (loss.item(), scheduler.get_last_lr()[0]))
 
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
@@ -205,7 +219,7 @@ def train(args, training_features, model, tokenizer):
                 if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
                     wandb.log(
                         {
-                            'lr': scheduler.get_lr()[0],
+                            'lr': scheduler.get_last_lr()[0],
                             'loss': logging_loss / args.logging_steps
                         },
                         step=global_step
@@ -296,6 +310,7 @@ def get_args():
                         help="Linear warmup over warmup_steps.")
     parser.add_argument("--warmup_portion", default=0, type=float, 
                         help="Linear warmup over warmup_portion of the total steps (overrides num_warmup_steps).")
+    parser.add_argument("--scheduler", defualt="linear", type=str)
 
     parser.add_argument("--random_prob", default=0.1, type=float,
                         help="prob to random replace a masked token")
