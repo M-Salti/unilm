@@ -126,7 +126,7 @@ def train(args, training_features, model, tokenizer):
     elif args.scheduler == "1cycle":
         scheduler = OneCycleLR(
             optimizer, max_lr=args.learning_rate, total_steps=args.num_training_steps, pct_start=args.warmup_portion, 
-            anneal_strategy="cos", final_div_factor=1e-4, last_epoch=-1
+            anneal_strategy=args.anneal_strategy, final_div_factor=1e4, last_epoch=-1
         )
     
     else:
@@ -311,6 +311,7 @@ def get_args():
     parser.add_argument("--warmup_portion", default=0, type=float, 
                         help="Linear warmup over warmup_portion of the total steps (overrides num_warmup_steps).")
     parser.add_argument("--scheduler", default="linear", type=str)
+    parser.add_argument("--anneal_strategy", default="cos", type=str)
 
     parser.add_argument("--random_prob", default=0.1, type=float,
                         help="prob to random replace a masked token")
