@@ -310,7 +310,7 @@ def get_args():
                         help="Linear warmup over warmup_steps.")
     parser.add_argument("--warmup_portion", default=0, type=float, 
                         help="Linear warmup over warmup_portion of the total steps (overrides num_warmup_steps).")
-    parser.add_argument("--scheduler", defualt="linear", type=str)
+    parser.add_argument("--scheduler", default="linear", type=str)
 
     parser.add_argument("--random_prob", default=0.1, type=float,
                         help="prob to random replace a masked token")
